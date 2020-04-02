@@ -1,17 +1,20 @@
 package com.guidodelbo.usercrud.service;
 
+import com.guidodelbo.usercrud.CustomGlobalExceptionHandler;
 import com.guidodelbo.usercrud.entity.User;
 import com.guidodelbo.usercrud.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
 public class UserService {
-    
-    @Autowired
-    private UserRepository repository;
+
+    private final UserRepository repository;
+
+    public UserService(UserRepository repository) {
+        this.repository = repository;
+    }
 
     public User saveUser(User user) {
         return repository.save(user);
@@ -25,8 +28,8 @@ public class UserService {
         return repository.findAll();
     }
 
-    public User getUserById(int id) {
-        return repository.findById(id).orElse(null);
+    public User getUserByDni(int dni) {
+        return repository.findByDni(dni);
     }
 
     public User getUserByName(String name) {
@@ -36,7 +39,7 @@ public class UserService {
     public String deleteUser(int id) {
         repository.deleteById(id);
 
-        return "user removed !! " + id;
+        return "User removed: ID " + id;
     }
 
     public User updateUser(User user) {
@@ -49,5 +52,4 @@ public class UserService {
 
         return repository.save(existingUser);
     }
-
 }
