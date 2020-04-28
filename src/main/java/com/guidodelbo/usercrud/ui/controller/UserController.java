@@ -1,24 +1,22 @@
 package com.guidodelbo.usercrud.ui.controller;
 
 import com.guidodelbo.usercrud.exception.UserServiceException;
+import com.guidodelbo.usercrud.service.impl.AddressServiceImpl;
+import com.guidodelbo.usercrud.shared.dto.AddressDto;
 import com.guidodelbo.usercrud.shared.dto.UserDto;
 import com.guidodelbo.usercrud.ui.model.request.UserDetailsRequestModel;
-import com.guidodelbo.usercrud.service.UserServiceImpl;
-import com.guidodelbo.usercrud.ui.model.response.ErrorMessages;
-import com.guidodelbo.usercrud.ui.model.response.OperationStatusModel;
-import com.guidodelbo.usercrud.ui.model.response.RequestOperationStatus;
-import com.guidodelbo.usercrud.ui.model.response.UserRest;
-import org.hibernate.validator.constraints.pl.REGON;
+import com.guidodelbo.usercrud.service.impl.UserServiceImpl;
+import com.guidodelbo.usercrud.ui.model.response.*;
+import org.modelmapper.ModelMapper;
+import org.modelmapper.TypeToken;
 import org.springframework.beans.BeanUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import javax.print.attribute.standard.Media;
-import javax.validation.Valid;
-import javax.validation.constraints.Min;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,10 +25,12 @@ import java.util.List;
 //@Validated
 public class UserController {
 
-    private final UserServiceImpl service;
+    private final UserServiceImpl userService;
+    private final AddressServiceImpl addressService;
 
-    public UserController(UserServiceImpl service) {
-        this.service = service;
+    public UserController(UserServiceImpl userService, AddressServiceImpl addressService) {
+        this.userService = userService;
+        this.addressService = addressService;
     }
 
     @GetMapping(produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
@@ -38,7 +38,7 @@ public class UserController {
                                                       @RequestParam(value = "limit", defaultValue = "10") int limit) {
 
         List<UserRest> returnValue = new ArrayList<>();
-        List<UserDto> users = service.getUsers(page, limit);
+        List<UserDto> users = userService.getUsers(page, limit);
 
         for (UserDto userDto : users) {
             UserRest userModel = new UserRest();
@@ -53,12 +53,35 @@ public class UserController {
             produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
     public UserRest getUserByUserId(@PathVariable String id) {
 
-        UserDto userDto = service.getUserByUserId(id);
+        UserDto userDto = userService.getUserByUserId(id);
 
-        UserRest returnValue = new UserRest();
-        BeanUtils.copyProperties(userDto, returnValue);
+        return new ModelMapper().map(userDto, UserRest.class);
+    }
+
+    @GetMapping(path = "/{id}/addresses",
+            produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
+    public List<AddressRest> getUserAddresses(@PathVariable String id) {
+
+        List<AddressDto> addressDto = addressService.getAddresses(id);
+
+        List<AddressRest> returnValue = new ArrayList<>();
+
+        if(addressDto != null && !addressDto.isEmpty())
+        {
+            Type listType = new TypeToken<List<AddressRest>>() {}.getType();
+            returnValue = new ModelMapper().map(addressDto, listType);
+        }
 
         return returnValue;
+    }
+
+    @GetMapping(path = "/{userId}/addresses/{addressId}",
+            produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
+    public AddressRest getUserAddress(@PathVariable String userId, @PathVariable String addressId) {
+
+        AddressDto addressDto = addressService.getAddress(userId, addressId);
+
+        return new ModelMapper().map(addressDto, AddressRest.class);
     }
 
     @PostMapping(consumes = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE},
@@ -68,15 +91,12 @@ public class UserController {
         if (userDetails.getName().isEmpty())
             throw new UserServiceException(ErrorMessages.MISSING_REQUIRED_FIELD.getErrorMessage());
 
-        UserRest returnValue = new UserRest();
+        ModelMapper modelMapper = new ModelMapper();
+        UserDto userDto = modelMapper.map(userDetails, UserDto.class);
 
-        UserDto userDto = new UserDto();
-        BeanUtils.copyProperties(userDetails, userDto);
+        UserDto createdUser = userService.saveUser(userDto);
 
-        UserDto createdUser = service.saveUser(userDto);
-        BeanUtils.copyProperties(createdUser, returnValue);
-
-        return returnValue;
+        return modelMapper.map(createdUser, UserRest.class);
     }
 
 //    @PostMapping("/list")
@@ -91,7 +111,7 @@ public class UserController {
         UserDto userDto = new UserDto();
         BeanUtils.copyProperties(userDetails, userDto);
 
-        UserDto updatedUser = service.updateUser(id, userDto);
+        UserDto updatedUser = userService.updateUser(id, userDto);
 
         UserRest returnValue = new UserRest();
         BeanUtils.copyProperties(updatedUser, returnValue);
@@ -106,7 +126,7 @@ public class UserController {
         OperationStatusModel returnValue = new OperationStatusModel();
         returnValue.setOperationName(RequestOperationName.DELETE.name());
 
-        service.deleteUser(id);
+        userService.deleteUser(id);
 
         returnValue.setOperationResult(RequestOperationStatus.SUCCESS.name());
 

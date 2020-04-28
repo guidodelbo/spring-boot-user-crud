@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.NotEmpty;
+import java.util.List;
 
 @Data
 public class UserDetailsRequestModel {
@@ -20,4 +21,6 @@ public class UserDetailsRequestModel {
 
 //    @NotEmpty(message = "Please provide a password")
     private String password;
+
+    private List<AddressRequestModel> addresses;
 }
