@@ -8,7 +8,6 @@ import com.guidodelbo.usercrud.shared.Utils;
 import com.guidodelbo.usercrud.shared.dto.AddressDto;
 import com.guidodelbo.usercrud.shared.dto.UserDto;
 import com.guidodelbo.usercrud.ui.model.response.ErrorMessages;
-import com.guidodelbo.usercrud.ui.model.response.UserRest;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
@@ -27,12 +26,12 @@ import java.util.stream.IntStream;
 @Service
 public class UserServiceImpl implements UserService {
 
-    private final UserRepository repository;
+    private final UserRepository userRepository;
     private final Utils utils;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
 
-    public UserServiceImpl(UserRepository repository, Utils utils, BCryptPasswordEncoder bCryptPasswordEncoder) {
-        this.repository = repository;
+    public UserServiceImpl(UserRepository userRepository, Utils utils, BCryptPasswordEncoder bCryptPasswordEncoder) {
+        this.userRepository = userRepository;
         this.utils = utils;
         this.bCryptPasswordEncoder = bCryptPasswordEncoder;
     }
@@ -40,7 +39,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDto saveUser(UserDto user) {
 
-        if (repository.findByEmail(user.getEmail()) != null)
+        if (userRepository.findByEmail(user.getEmail()) != null)
             throw new UserServiceException(ErrorMessages.RECORD_ALREADY_EXISTS.getErrorMessage());
 
         List<AddressDto> addresses = user.getAddresses();
@@ -58,15 +57,17 @@ public class UserServiceImpl implements UserService {
         String publicUserId = utils.generateUserId(30);
         userEntity.setEncryptedPassword(bCryptPasswordEncoder.encode(user.getPassword()));
         userEntity.setUserId(publicUserId);
+        userEntity.setEmailVerificationToken(utils.generateEmailVerificationToken(publicUserId));
+        userEntity.setEmailVerificationStatus(false);
 
-        UserEntity storedUserDetails = repository.save(userEntity);
+        UserEntity storedUserDetails = userRepository.save(userEntity);
 
         return modelMapper.map(storedUserDetails, UserDto.class);
     }
 
     @Override
     public UserDto getUser(String email) {
-        UserEntity userEntity = repository.findByEmail(email);
+        UserEntity userEntity = userRepository.findByEmail(email);
 
         if (userEntity == null)
             throw new UserServiceException(ErrorMessages.NO_RECORD_FOUND.getErrorMessage());
@@ -78,7 +79,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDto getUserByUserId(String userId) {
-        UserEntity userEntity = repository.findByUserId(userId);
+        UserEntity userEntity = userRepository.findByUserId(userId);
 
         if (userEntity == null)
             throw new UserServiceException("User with ID: " + userId + " was not found.");
@@ -90,12 +91,13 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
 
-        UserEntity userEntity = repository.findByEmail(email);
+        UserEntity userEntity = userRepository.findByEmail(email);
 
         if (userEntity == null)
             throw new UserServiceException(ErrorMessages.NO_RECORD_FOUND.getErrorMessage());
 
-        return new User(userEntity.getEmail(), userEntity.getEncryptedPassword(), new ArrayList<>());
+        return new User(userEntity.getEmail(), userEntity.getEncryptedPassword(), userEntity.getEmailVerificationStatus(),
+                true, true, true, new ArrayList<>());
     }
 
 //    public List<UserDetailsRequestModel> saveUsers(List<UserDetailsRequestModel> users) {
@@ -111,18 +113,20 @@ public class UserServiceImpl implements UserService {
 //        return repository.findByName(name);
 //    }
 
+    @Override
     public void deleteUser(String userId) {
-        UserEntity userEntity = repository.findByUserId(userId);
+        UserEntity userEntity = userRepository.findByUserId(userId);
 
         if (userEntity == null)
             throw new UserServiceException(ErrorMessages.NO_RECORD_FOUND.getErrorMessage());
 
-        repository.delete(userEntity);
+        userRepository.delete(userEntity);
     }
 
+    @Override
     public UserDto updateUser(String userId, UserDto user) {
 
-        UserEntity userEntity = repository.findByUserId(userId);
+        UserEntity userEntity = userRepository.findByUserId(userId);
 
         if (userEntity == null)
             throw new UserServiceException(ErrorMessages.NO_RECORD_FOUND.getErrorMessage());
@@ -131,13 +135,13 @@ public class UserServiceImpl implements UserService {
         userEntity.setName(user.getName());
         userEntity.setSurname(user.getSurname());
 
-        UserEntity updatedUserDetails = repository.save(userEntity);
+        UserEntity updatedUserDetails = userRepository.save(userEntity);
         UserDto returnValue = new UserDto();
         BeanUtils.copyProperties(updatedUserDetails, returnValue);
 
         return returnValue;
     }
-
+    @Override
     public List<UserDto> getUsers(int page, int limit) {
         List<UserDto> returnValue = new ArrayList<>();
 
@@ -145,7 +149,7 @@ public class UserServiceImpl implements UserService {
             page -= 1;
 
         Pageable pageableRequest = PageRequest.of(page, limit);
-        Page<UserEntity> usersPage = repository.findAll(pageableRequest);
+        Page<UserEntity> usersPage = userRepository.findAll(pageableRequest);
 
         List<UserEntity> users = usersPage.getContent();
 
@@ -156,5 +160,24 @@ public class UserServiceImpl implements UserService {
         }
 
             return returnValue;
+    }
+
+    @Override
+    public boolean verifyEmailToken(String token) {
+
+        boolean returnValue = false;
+
+        UserEntity userEntity = userRepository.findUserByEmailVerificationToken(token);
+
+        if(userEntity != null){
+          boolean hasTokenExpired = Utils.hasTokenExpired(token);
+          if(!hasTokenExpired){
+              userEntity.setEmailVerificationToken(null);
+              userEntity.setEmailVerificationStatus(Boolean.TRUE);
+              userRepository.save(userEntity);
+              returnValue = true;
+          }
+        }
+        return returnValue;
     }
 }

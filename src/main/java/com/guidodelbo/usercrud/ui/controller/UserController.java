@@ -33,6 +33,9 @@ public class UserController {
         this.addressService = addressService;
     }
 
+    /*
+    * http://localhost:8080/user-crud/users/
+     */
     @GetMapping(produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
     public ResponseEntity<List<UserRest>> getAllUsers(@RequestParam(value = "page", defaultValue = "1") int page,
                                                       @RequestParam(value = "limit", defaultValue = "10") int limit) {
@@ -82,6 +85,25 @@ public class UserController {
         AddressDto addressDto = addressService.getAddress(userId, addressId);
 
         return new ModelMapper().map(addressDto, AddressRest.class);
+    }
+
+    /*
+     * http://localhost:8080/user-crud/users/email-verification?token=
+     */
+    @GetMapping(path = "/email-verification",
+            produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
+    public OperationStatusModel verifyEmailToken(@RequestParam(value = "token") String token) {
+        OperationStatusModel returnValue = new OperationStatusModel();
+        returnValue.setOperationName(RequestOperationName.VERIFY_EMAIL.name());
+
+        boolean isVerified = userService.verifyEmailToken(token);
+
+        if(isVerified)
+            returnValue.setOperationResult(RequestOperationStatus.SUCCESS.name());
+        else
+            returnValue.setOperationResult(RequestOperationStatus.ERROR.name());
+
+        return returnValue;
     }
 
     @PostMapping(consumes = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE},

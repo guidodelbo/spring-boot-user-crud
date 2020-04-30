@@ -1,6 +1,7 @@
 package com.guidodelbo.usercrud.io.entity;
 
 import lombok.Data;
+import lombok.ToString;
 
 import javax.persistence.*;
 import java.io.Serializable;

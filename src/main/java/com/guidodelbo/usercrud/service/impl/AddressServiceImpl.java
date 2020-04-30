@@ -11,6 +11,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 @Service
@@ -55,9 +56,8 @@ public class AddressServiceImpl implements AddressService {
 
         Iterable<AddressEntity> addressEntity = addressRepository.findAllByUserDetails(userEntity);
 
-        for(AddressEntity address : addressEntity) {
-
-            if(address.getAddressId().equals(userId)) {
+        for (AddressEntity address : addressEntity) {
+            if (address.getAddressId().equals(addressId)) {
                 return new ModelMapper().map(address, AddressDto.class);
             }
         }

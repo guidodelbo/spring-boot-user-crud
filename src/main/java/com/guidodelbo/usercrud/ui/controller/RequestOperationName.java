@@ -1,5 +1,6 @@
 package com.guidodelbo.usercrud.ui.controller;
 
 public enum RequestOperationName {
-    DELETE
+    DELETE,
+    VERIFY_EMAIL
 }
