@@ -1,8 +1,10 @@
 package com.guidodelbo.usercrud.shared.dto;
 
 import lombok.Data;
+import lombok.ToString;
 
 @Data
+@ToString
 public class AddressDto {
 
     private long id;

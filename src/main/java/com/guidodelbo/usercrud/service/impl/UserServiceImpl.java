@@ -67,6 +67,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDto getUser(String email) {
+
         UserEntity userEntity = userRepository.findByEmail(email);
 
         if (userEntity == null)
@@ -170,7 +171,9 @@ public class UserServiceImpl implements UserService {
         UserEntity userEntity = userRepository.findUserByEmailVerificationToken(token);
 
         if(userEntity != null){
+
           boolean hasTokenExpired = Utils.hasTokenExpired(token);
+
           if(!hasTokenExpired){
               userEntity.setEmailVerificationToken(null);
               userEntity.setEmailVerificationStatus(Boolean.TRUE);
@@ -178,6 +181,7 @@ public class UserServiceImpl implements UserService {
               returnValue = true;
           }
         }
+
         return returnValue;
     }
 }
