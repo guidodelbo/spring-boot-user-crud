@@ -90,8 +90,7 @@ public class UserController {
     /*
     *   http://localhost:8080/user-crud/users/email-verification?token=
     **/
-    @GetMapping(path = "/email-verification",
-            produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
+    @GetMapping(path = "/email-verification", produces = {MediaType.APPLICATION_JSON_VALUE})
     public OperationStatusModel verifyEmailToken(@RequestParam(value = "token") String token) {
 
         OperationStatusModel returnValue = new OperationStatusModel();
