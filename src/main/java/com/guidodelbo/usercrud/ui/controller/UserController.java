@@ -7,6 +7,8 @@ import com.guidodelbo.usercrud.shared.dto.UserDto;
 import com.guidodelbo.usercrud.ui.model.request.UserDetailsRequestModel;
 import com.guidodelbo.usercrud.service.impl.UserServiceImpl;
 import com.guidodelbo.usercrud.ui.model.response.*;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiImplicitParams;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.beans.BeanUtils;
@@ -36,22 +38,31 @@ public class UserController {
     /*
     * http://localhost:8080/user-crud/users/
      */
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "authorization", value = "${userController.authorizationHeader.description}", paramType = "header")
+    })
     @GetMapping(produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
     public ResponseEntity<List<UserRest>> getAllUsers(@RequestParam(value = "page", defaultValue = "1") int page,
                                                       @RequestParam(value = "limit", defaultValue = "10") int limit) {
 
+        ModelMapper modelMapper = new ModelMapper();
         List<UserRest> returnValue = new ArrayList<>();
         List<UserDto> users = userService.getUsers(page, limit);
 
         for (UserDto userDto : users) {
-            UserRest userModel = new UserRest();
-            BeanUtils.copyProperties(userDto, userModel);
+            UserRest userModel = modelMapper.map(userDto, UserRest.class);
             returnValue.add(userModel);
         }
 
         return new ResponseEntity<>(returnValue, HttpStatus.OK);
     }
 
+    /*
+     * http://localhost:8080/user-crud/users/{userId}
+     */
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "authorization", value = "${userController.authorizationHeader.description}", paramType = "header")
+    })
     @GetMapping(path = "/{id}",
             produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
     public UserRest getUserByUserId(@PathVariable String id) {
@@ -61,6 +72,12 @@ public class UserController {
         return new ModelMapper().map(userDto, UserRest.class);
     }
 
+    /*
+     * http://localhost:8080/user-crud/users/{userId}/addresses
+     */
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "authorization", value = "${userController.authorizationHeader.description}", paramType = "header")
+    })
     @GetMapping(path = "/{id}/addresses",
             produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
     public List<AddressRest> getUserAddresses(@PathVariable String id) {
@@ -78,6 +95,12 @@ public class UserController {
         return returnValue;
     }
 
+    /*
+     * http://localhost:8080/user-crud/users/{userId}/addresses/{addressId}
+     */
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "authorization", value = "${userController.authorizationHeader.description}", paramType = "header")
+    })
     @GetMapping(path = "/{userId}/addresses/{addressId}",
             produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
     public AddressRest getUserAddress(@PathVariable String userId, @PathVariable String addressId) {
@@ -126,6 +149,13 @@ public class UserController {
 //        return service.saveUsers(users);
 //    }
 
+
+    /*
+     * http://localhost:8080/user-crud/users/{id}
+     */
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "authorization", value = "${userController.authorizationHeader.description}", paramType = "header")
+    })
     @PutMapping(path = "/{id}", consumes = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE},
             produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
     public UserRest updateUser(@PathVariable String id, @RequestBody UserDetailsRequestModel userDetails) {
@@ -141,6 +171,12 @@ public class UserController {
         return returnValue;
     }
 
+    /*
+     * http://localhost:8080/user-crud/users/{id}
+     */
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "authorization", value = "${userController.authorizationHeader.description}", paramType = "header")
+    })
     @DeleteMapping(path = "/{id}",
             produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE})
     public OperationStatusModel deleteUser(@PathVariable String id) {

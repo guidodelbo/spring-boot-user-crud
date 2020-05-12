@@ -144,6 +144,8 @@ public class UserServiceImpl implements UserService {
     }
     @Override
     public List<UserDto> getUsers(int page, int limit) {
+
+        ModelMapper modelMapper = new ModelMapper();
         List<UserDto> returnValue = new ArrayList<>();
 
         if(page > 0)
@@ -155,12 +157,11 @@ public class UserServiceImpl implements UserService {
         List<UserEntity> users = usersPage.getContent();
 
         for (UserEntity userEntity : users) {
-            UserDto userDto = new UserDto();
-            BeanUtils.copyProperties(userEntity, userDto);
+            UserDto userDto = modelMapper.map(userEntity, UserDto.class);
             returnValue.add(userDto);
         }
 
-            return returnValue;
+        return returnValue;
     }
 
     @Override
