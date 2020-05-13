@@ -11,8 +11,11 @@ import org.springframework.stereotype.Service;
 @Service
 public class AmazonSES {
 
-    // This address must be verified with Amazon SES.
-    final String FROM = "gdelbo@gmail.com";
+    @Value("${baseUrl}")
+    private String url;
+
+    @Value("${amazonSES.aws.emailFrom}")
+    private String FROM;
 
     // The subject line for the email.
     final String SUBJECT = "One last step to complete your registration with UserCrud";
@@ -29,7 +32,7 @@ public class AmazonSES {
     final String HTMLBODY = "<h1>Please verify your email address</h1>"
             + "<p>Thank you for registering with our app. To complete registration process and be able to log in,"
             + " click on the following link: "
-            + "<a href='http://ec2-18-228-196-215.sa-east-1.compute.amazonaws.com:8080/verification-service/email-verification.html?token=$tokenValue'>"
+            + "<a href='" + url + "/verification-service/email-verification.html?token=$tokenValue'>"
             + "Final step to complete your registration" + "</a><br/><br/>"
             + "Thank you! And we are waiting for you inside!";
 
@@ -37,14 +40,14 @@ public class AmazonSES {
     final String TEXTBODY = "Please verify your email address. "
             + "Thank you for registering with our app. To complete registration process and be able to log in,"
             + " open then the following URL in your browser window: "
-            + " http://ec2-18-228-196-215.sa-east-1.compute.amazonaws.com:8080/verification-service/email-verification.html?token=$tokenValue"
+            + url + " /verification-service/email-verification.html?token=$tokenValue"
             + " Thank you! And we are waiting for you inside!";
     
     final String PASSWORD_RESET_HTMLBODY = "<h1>A request to reset your password</h1>"
             + "<p>Hi, $firstName!</p> "
             + "<p>Someone has requested to reset your password with our app. If it were not you, please ignore it."
             + " otherwise please click on the link below to set a new password: "
-            + "<a href='http://localhost:8080/verification-service/password-reset.html?token=$tokenValue'>"
+            + "<a href='" + url + "/verification-service/password-reset.html?token=$tokenValue'>"
             + " Click this link to Reset Password"
             + "</a><br/><br/>"
             + "Thank you!";
@@ -54,7 +57,7 @@ public class AmazonSES {
             + "Hi, $firstName! "
             + "Someone has requested to reset your password with our app. If it were not you, please ignore it."
             + " otherwise please open the link below in your browser window to set a new password:"
-            + " http://localhost:8080/verification-service/password-reset.html?token=$tokenValue"
+            + url +" /verification-service/password-reset.html?token=$tokenValue"
             + " Thank you!";
 
 
