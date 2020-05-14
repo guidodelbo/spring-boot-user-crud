@@ -29,35 +29,35 @@ public class AmazonSES {
     private String secretKey;
 
     // The HTML body for the email.
-    final String HTMLBODY = "<h1>Please verify your email address</h1>"
+    private String HTMLBODY = "<h1>Please verify your email address</h1>"
             + "<p>Thank you for registering with our app. To complete registration process and be able to log in,"
             + " click on the following link: "
-            + "<a href='" + url + "/verification-service/email-verification.html?token=$tokenValue'>"
+            + "<a href='$baseUrl/verification-service/email-verification.html?token=$tokenValue'>"
             + "Final step to complete your registration" + "</a><br/><br/>"
             + "Thank you! And we are waiting for you inside!";
 
     // The email body for recipients with non-HTML email clients.
-    final String TEXTBODY = "Please verify your email address. "
+    private String TEXTBODY = "Please verify your email address. "
             + "Thank you for registering with our app. To complete registration process and be able to log in,"
             + " open then the following URL in your browser window: "
-            + url + " /verification-service/email-verification.html?token=$tokenValue"
+            + "$baseUrl/verification-service/email-verification.html?token=$tokenValue"
             + " Thank you! And we are waiting for you inside!";
-    
-    final String PASSWORD_RESET_HTMLBODY = "<h1>A request to reset your password</h1>"
+
+    private String PASSWORD_RESET_HTMLBODY = "<h1>A request to reset your password</h1>"
             + "<p>Hi, $firstName!</p> "
             + "<p>Someone has requested to reset your password with our app. If it were not you, please ignore it."
             + " otherwise please click on the link below to set a new password: "
-            + "<a href='" + url + "/verification-service/password-reset.html?token=$tokenValue'>"
+            + "<a href='$baseUrl/verification-service/password-reset.html?token=$tokenValue'>"
             + " Click this link to Reset Password"
             + "</a><br/><br/>"
             + "Thank you!";
 
     // The email body for recipients with non-HTML email clients.
-    final String PASSWORD_RESET_TEXTBODY = "A request to reset your password "
+    private String PASSWORD_RESET_TEXTBODY = "A request to reset your password "
             + "Hi, $firstName! "
             + "Someone has requested to reset your password with our app. If it were not you, please ignore it."
             + " otherwise please open the link below in your browser window to set a new password:"
-            + url +" /verification-service/password-reset.html?token=$tokenValue"
+            + "$baseUrl/verification-service/password-reset.html?token=$tokenValue"
             + " Thank you!";
 
 
@@ -69,8 +69,8 @@ public class AmazonSES {
         AmazonSimpleEmailService client = AmazonSimpleEmailServiceClientBuilder.standard().withRegion(Regions.SA_EAST_1)
                 .build();
 
-        String htmlBodyWithToken = HTMLBODY.replace("$tokenValue", userDto.getEmailVerificationToken());
-        String textBodyWithToken = TEXTBODY.replace("$tokenValue", userDto.getEmailVerificationToken());
+        String htmlBodyWithToken = HTMLBODY.replace("$tokenValue", userDto.getEmailVerificationToken()).replace("$baseUrl", url);
+        String textBodyWithToken = TEXTBODY.replace("$tokenValue", userDto.getEmailVerificationToken()).replace("$baseUrl", url);
 
         SendEmailRequest request = new SendEmailRequest()
                 .withDestination(new Destination().withToAddresses(userDto.getEmail()))
@@ -94,10 +94,10 @@ public class AmazonSES {
                         .withRegion(Regions.SA_EAST_1).build();
 
         String htmlBodyWithToken = PASSWORD_RESET_HTMLBODY.replace("$tokenValue", token);
-        htmlBodyWithToken = htmlBodyWithToken.replace("$firstName", firstName);
+        htmlBodyWithToken = htmlBodyWithToken.replace("$firstName", firstName).replace("$baseUrl", url);
 
         String textBodyWithToken = PASSWORD_RESET_TEXTBODY.replace("$tokenValue", token);
-        textBodyWithToken = textBodyWithToken.replace("$firstName", firstName);
+        textBodyWithToken = textBodyWithToken.replace("$firstName", firstName).replace("$baseUrl", url);
 
 
         SendEmailRequest request = new SendEmailRequest()

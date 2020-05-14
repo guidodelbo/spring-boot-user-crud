@@ -4,11 +4,18 @@ import com.guidodelbo.usercrud.exception.UserServiceException;
 import com.guidodelbo.usercrud.io.entity.UserEntity;
 import com.guidodelbo.usercrud.io.repository.UserRepository;
 import com.guidodelbo.usercrud.service.UserService;
+import com.guidodelbo.usercrud.shared.AmazonSES;
+import com.guidodelbo.usercrud.shared.EmailScheduler;
 import com.guidodelbo.usercrud.shared.Utils;
 import com.guidodelbo.usercrud.shared.dto.AddressDto;
 import com.guidodelbo.usercrud.shared.dto.UserDto;
 import com.guidodelbo.usercrud.ui.model.response.ErrorMessages;
 import org.modelmapper.ModelMapper;
+import org.redisson.Redisson;
+import org.redisson.api.RScheduledExecutorService;
+import org.redisson.api.RScheduledFuture;
+import org.redisson.api.RedissonClient;
+import org.redisson.config.Config;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -21,6 +28,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 @Service
@@ -29,11 +37,13 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final Utils utils;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
+    private final AmazonSES amazonSES;
 
-    public UserServiceImpl(UserRepository userRepository, Utils utils, BCryptPasswordEncoder bCryptPasswordEncoder) {
+    public UserServiceImpl(UserRepository userRepository, Utils utils, BCryptPasswordEncoder bCryptPasswordEncoder, AmazonSES amazonSES) {
         this.userRepository = userRepository;
         this.utils = utils;
         this.bCryptPasswordEncoder = bCryptPasswordEncoder;
+        this.amazonSES = amazonSES;
     }
 
     @Override
@@ -42,6 +52,17 @@ public class UserServiceImpl implements UserService {
         if (userRepository.findByEmail(user.getEmail()) != null)
             throw new UserServiceException(ErrorMessages.RECORD_ALREADY_EXISTS.getErrorMessage());
 
+        // Redisson
+
+        Config config = new Config();
+        config.useClusterServers()
+                // use "rediss://" for SSL connection
+                .addNodeAddress("redis://127.0.0.1:7181");
+
+        // Sync and Async API
+        RedissonClient redisson = Redisson.create(config);
+
+        RScheduledExecutorService executorService = redisson.getExecutorService("myExecutor");
         List<AddressDto> addresses = user.getAddresses();
 
         IntStream.range(0, addresses.size()).forEach(i -> {
@@ -61,8 +82,11 @@ public class UserServiceImpl implements UserService {
         userEntity.setEmailVerificationStatus(false);
 
         UserEntity storedUserDetails = userRepository.save(userEntity);
+        UserDto returnValue = modelMapper.map(storedUserDetails, UserDto.class);
 
-        return modelMapper.map(storedUserDetails, UserDto.class);
+        RScheduledFuture<?> verifyEmail = executorService.schedule(new EmailScheduler(returnValue), 1, TimeUnit.HOURS);
+
+        return returnValue;
     }
 
     @Override
