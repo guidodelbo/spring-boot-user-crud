@@ -1,5 +1,6 @@
 package com.guidodelbo.usercrud.shared;
 
+import com.guidodelbo.usercrud.service.impl.SchedulingServiceImpl;
 import com.guidodelbo.usercrud.shared.dto.UserDto;
 import org.redisson.api.RedissonClient;
 import org.redisson.api.annotation.RInject;

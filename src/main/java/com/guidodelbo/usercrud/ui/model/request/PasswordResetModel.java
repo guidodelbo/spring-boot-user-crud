@@ -1,18 +1,16 @@
 package com.guidodelbo.usercrud.ui.model.request;
 
-import lombok.Data;
+public class PasswordResetModel {
 
-public class UserLoginRequestModel {
-
-    private String email;
+    private String token;
     private String password;
 
-    public String getEmail() {
-        return email;
+    public String getToken() {
+        return token;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public void setToken(String token) {
+        this.token = token;
     }
 
     public String getPassword() {
