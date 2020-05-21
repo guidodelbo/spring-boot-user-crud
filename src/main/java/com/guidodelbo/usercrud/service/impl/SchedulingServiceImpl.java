@@ -23,7 +23,7 @@ public class SchedulingServiceImpl implements SchedulingService {
     public SchedulingServiceImpl() {
 
         Config config = new Config();
-        config.useClusterServers().addNodeAddress("redis://127.0.0.1:6379");
+        config.useSingleServer().setAddress("redis://127.0.0.1:6379");
 
         this.redisson = Redisson.create(config);
 
