@@ -1,9 +1,5 @@
 package com.guidodelbo.usercrud.shared.dto;
 
-import com.guidodelbo.usercrud.ui.model.request.AddressRequestModel;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.util.Collection;

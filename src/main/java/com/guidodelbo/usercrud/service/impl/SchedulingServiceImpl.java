@@ -5,9 +5,7 @@ import com.guidodelbo.usercrud.shared.EmailScheduler;
 import com.guidodelbo.usercrud.shared.dto.UserDto;
 import org.redisson.Redisson;
 import org.redisson.RedissonNode;
-import org.redisson.api.RScheduledExecutorService;
-import org.redisson.api.RScheduledFuture;
-import org.redisson.api.RedissonClient;
+import org.redisson.api.*;
 import org.redisson.config.Config;
 import org.redisson.config.RedissonNodeConfig;
 import org.springframework.stereotype.Service;
@@ -19,25 +17,31 @@ import java.util.concurrent.TimeUnit;
 public class SchedulingServiceImpl implements SchedulingService {
 
     private RedissonClient redisson;
+    private RScheduledExecutorService executorService;
 
     public SchedulingServiceImpl() {
-
         Config config = new Config();
         config.useSingleServer().setAddress("redis://127.0.0.1:6379");
 
         this.redisson = Redisson.create(config);
 
-        RedissonNodeConfig nodeConfig = new RedissonNodeConfig(config);
-        nodeConfig.setExecutorServiceWorkers(Collections.singletonMap("myExecutor", 5));
-        RedissonNode node = RedissonNode.create(nodeConfig);
-        node.start();
+        //5 Workers disponibles para ejecutar los email scheduleados.
+        WorkerOptions options = WorkerOptions.defaults().workers(5);
+
+        this.executorService = redisson.getExecutorService("myExecutor");
+        this.executorService.registerWorkers(options);
     }
 
     @Override
     public void scheduleEmail(UserDto userDto) {
+        try {
 
-        RScheduledExecutorService executorService = redisson.getExecutorService("myExecutor");
-        executorService.schedule(new EmailScheduler(userDto), 1, TimeUnit.MINUTES);
+            executorService.schedule(new EmailScheduler(userDto), 1, TimeUnit.MINUTES);
+
+        } catch(Exception e) {
+            //TODO: loggear exception
+            System.out.println(e.getMessage());
+        }
     }
 
 

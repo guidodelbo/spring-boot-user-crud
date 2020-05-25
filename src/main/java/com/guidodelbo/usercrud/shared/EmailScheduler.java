@@ -1,18 +1,14 @@
 package com.guidodelbo.usercrud.shared;
 
-import com.guidodelbo.usercrud.service.impl.SchedulingServiceImpl;
 import com.guidodelbo.usercrud.shared.dto.UserDto;
-import org.redisson.api.RedissonClient;
-import org.redisson.api.annotation.RInject;
 import org.springframework.beans.factory.annotation.Autowired;
 
-public class EmailScheduler implements Runnable {
+import java.io.Serializable;
+
+public class EmailScheduler implements Runnable, Serializable {
 
     @Autowired
     private AmazonSES amazonSES;
-
-    @RInject
-    private RedissonClient redissonClient;
 
     private UserDto userDto;
 
@@ -22,6 +18,13 @@ public class EmailScheduler implements Runnable {
 
     @Override
     public void run() {
-        amazonSES.verifyEmail(userDto);
+        try {
+
+            amazonSES.verifyEmail(userDto);
+
+        } catch(Exception e) {
+            //TODO: loggear exception
+            System.out.println(e.getMessage());
+        }
     }
 }
