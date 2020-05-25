@@ -1,16 +1,18 @@
 package com.guidodelbo.usercrud.service.impl;
 
+import com.guidodelbo.usercrud.SpringApplicationContext;
 import com.guidodelbo.usercrud.service.SchedulingService;
 import com.guidodelbo.usercrud.shared.EmailScheduler;
 import com.guidodelbo.usercrud.shared.dto.UserDto;
 import org.redisson.Redisson;
-import org.redisson.RedissonNode;
 import org.redisson.api.*;
 import org.redisson.config.Config;
-import org.redisson.config.RedissonNodeConfig;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.boot.web.servlet.context.AnnotationConfigServletWebServerApplicationContext;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -19,14 +21,17 @@ public class SchedulingServiceImpl implements SchedulingService {
     private RedissonClient redisson;
     private RScheduledExecutorService executorService;
 
-    public SchedulingServiceImpl() {
+    public SchedulingServiceImpl(SpringApplicationContext applicationContext) {
         Config config = new Config();
         config.useSingleServer().setAddress("redis://127.0.0.1:6379");
 
         this.redisson = Redisson.create(config);
+        
+        ConfigurableListableBeanFactory beanFactory = ((AnnotationConfigServletWebServerApplicationContext) applicationContext.getContext()).getBeanFactory();
 
-        //5 Workers disponibles para ejecutar los email scheduleados.
-        WorkerOptions options = WorkerOptions.defaults().workers(5);
+        WorkerOptions options = WorkerOptions.defaults()
+                .workers(5)
+                .beanFactory(beanFactory);
 
         this.executorService = redisson.getExecutorService("myExecutor");
         this.executorService.registerWorkers(options);
